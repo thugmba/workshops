@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to use command line interface (CLI)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #dc2626;
+      --primary-dark: #991b1b;
+      --primary-light: #fee2e2;
+      --accent: #e11d48;
+      --accent-light: #ffe4e6;
+      --font-heading: 'Montserrat', system-ui, sans-serif;
+      --font-body: 'Source Sans 3', system-ui, sans-serif;
+      --font-code: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: var(--font-body);
+      font-size: 1.3em;
+      background: #1a1a1a;
+      color: #333;
+      overflow: hidden;
+    }
+    #progressBar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: var(--primary); z-index: 100;
+      transition: width 0.3s ease;
+    }
+    #slideCounter {
+      position: fixed; bottom: 20px; left: 20px;
+      font-size: 0.8em; color: #666; z-index: 100;
+    }
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 50px 70px;
+      background: #fff;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      border-top: 4px solid var(--primary);
+    }
+    .slide.active { display: flex; transform: translateX(0); opacity: 1; }
+    .slide.exit-left { display: flex; transform: translateX(-100%); opacity: 0; }
+    .slide.exit-right { display: flex; transform: translateX(100%); opacity: 0; }
+    .title-slide {
+      border-top: none;
+      background: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .slide-body {
+      flex: 1;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 { font-family: var(--font-heading); color: #000; margin: 0 0 28px 0; }
+    .title-slide h1 { font-size: 4.5em; margin-bottom: 20px; }
+    h2 { font-family: var(--font-heading); color: var(--primary); font-size: 1.6em; margin: 0 0 20px 0; }
+    h3 { font-family: var(--font-heading); color: #444; font-size: 1.35em; margin: 20px 0 10px 0; }
+    p, li { line-height: 1.6; margin-bottom: 15px; }
+    
+    /* Components */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .col-card { padding: 14px; background: #f9f9f9; border-radius: 8px; height: 100%; }
+    
+    .term-card { display: flex; gap: 10px; margin-bottom: 10px; align-items: baseline; }
+    .term-name { font-weight: 600; width: 220px; flex-shrink: 0; color: var(--primary-dark); }
+    
+    .step-box { border-left: 3px solid var(--primary); padding: 10px 16px; margin-bottom: 15px; background: var(--primary-light); }
+    
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; border-right: 3px solid rgba(255,255,255,0.3); }
+    th:last-child { border-right: none; }
+    td { padding: 8px 14px; border-bottom: 1px solid #ddd; }
+    
+    pre {
+      font-family: var(--font-code);
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 1.15em;
+      overflow: x: auto;
+      margin: 10px 0;
+    }
+    code { font-family: var(--font-code); background: #eee; padding: 2px 4px; border-radius: 4px; }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-right: 5px;
+      color: #fff;
+    }
+    .badge-mac { background: #007aff; }
+    .badge-win { background: #00a4ef; }
+    .badge-linux { background: #fca311; }
+    
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; line-height: 1.6; }
+    .checklist li::before { content: '☐'; font-size: 1.2em; flex-shrink: 0; }
+    
+    ol.toc { font-size: 1.3em; line-height: 2.2; }
+  </style>
+</head>
+<body>
+  <div id="progressBar"></div>
+  <div id="slideCounter"></div>
+
+  <!-- Title Slide -->
+  <div class="slide title-slide">
+    <div class="slide-body" style="text-align: center;">
+      <h1>How to use command line interface (CLI)</h1>
+      <p>Author: Innovation Analytics Lab</p>
+      <p>Affiliation: Global Master of Business Administration</p>
+      <p>University: Tunghai University</p>
+      <p id="year"></p>
+    </div>
+  </div>
+
+  <!-- TOC Slide -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>Table of Contents</h2>
+      <ol class="toc">
+        <li>Purpose</li>
+        <li>Essential Terminology (CLI Glossary)</li>
+        <li>How to Open the Terminal / Command Prompt</li>
+        <li>Common Command Line Operations</li>
+        <li>Detailed Examples & Explanations</li>
+        <li>Student Evaluation: Real-World Scenario</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Slide 1: Purpose -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>1. Purpose</h2>
+      <p>Introduction to the command line interface (CLI): controlling your computer via text commands instead of clicking icons.</p>
+      <div class="two-col">
+        <div class="col-card">
+          <strong>Platforms:</strong>
+          <ul>
+            <li>macOS / Linux (Unix)</li>
+            <li>Windows</li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <strong>Importance:</strong>
+          <p>Foundational skill for business and non-engineering students in AI and Machine Learning courses.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 2: Essential Terminology (1/2) -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>2. Essential Terminology (1/2)</h2>
+      <div class="term-card">
+        <div class="term-name">Directory / Folder</div>
+        <div>Location in a file system used to store and organize files.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Parent Directory</div>
+        <div>A directory that contains one or more subdirectories.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Child Directory</div>
+        <div>A directory located inside another directory.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Current Working Directory</div>
+        <div>The directory you are currently "inside" in the terminal.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Home Directory</div>
+        <div>Default personal directory assigned to a user (<code>~</code> on Unix).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Essential Terminology (2/2) -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>2. Essential Terminology (2/2)</h2>
+      <div class="term-card">
+        <div class="term-name">Root Directory</div>
+        <div>The top-most directory in a file system (<code>/</code> on Unix, <code>C:\</code> on Windows).</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Project Root Directory</div>
+        <div>The top-most directory specific to a particular project.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Absolute Path</div>
+        <div>The complete path starting from the root directory.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Relative Path</div>
+        <div>The path relative to your current working directory.</div>
+      </div>
+      <div class="term-card">
+        <div class="term-name">Terminal / Shell</div>
+        <div>The text-based application interface used to execute commands.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: How to Open the Terminal -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>3. How to Open the Terminal</h2>
+      <div class="step-box">
+        <span class="badge badge-mac">macOS</span> <code>Cmd + Space</code> &rarr; type <code>Terminal</code> &rarr; Enter
+      </div>
+      <div class="step-box">
+        <span class="badge badge-win">Windows</span> <code>Win key</code> &rarr; type <code>cmd</code> &rarr; Enter
+      </div>
+      <div class="step-box">
+        <span class="badge badge-linux">Linux</span> <code>Ctrl + Alt + T</code> (Ubuntu/Common)
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Common Operations - Navigation -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>4.1 Navigation</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>macOS / Linux</th><th>Windows (Cmd)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>List files</td><td><code>ls</code> / <code>ls -la</code></td><td><code>dir</code></td></tr>
+          <tr><td>Print current dir</td><td><code>pwd</code></td><td><code>cd</code></td></tr>
+          <tr><td>Move to directory</td><td><code>cd folder</code></td><td><code>cd folder</code></td></tr>
+          <tr><td>Move to parent</td><td><code>cd ..</code></td><td><code>cd ..</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Slide 6: Common Operations - Managing Directories -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>4.2 Managing Directories</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>macOS / Linux</th><th>Windows (Cmd)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Create directory</td><td><code>mkdir name</code></td><td><code>mkdir name</code></td></tr>
+          <tr><td>Create subdirectory</td><td><code>mkdir -p a/b</code></td><td><code>mkdir a\b</code></td></tr>
+          <tr><td>Copy directory</td><td><code>cp -r src dest</code></td><td><code>xcopy /E /I src dest</code></td></tr>
+          <tr><td>Delete directory</td><td><code>rm -rf name</code></td><td><code>rmdir /s name</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Slide 7: Common Operations - Managing Files -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>4.3 Managing Files</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>macOS / Linux</th><th>Windows (Cmd)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Create text file</td><td><code>touch file.txt</code></td><td><code>type nul &gt; file.txt</code></td></tr>
+          <tr><td>Open in GUI editor</td><td><code>open -e file.txt</code></td><td><code>notepad file.txt</code></td></tr>
+          <tr><td>View contents</td><td><code>cat file.txt</code></td><td><code>type file.txt</code></td></tr>
+          <tr><td>Rename</td><td><code>mv old new</code></td><td><code>ren old new</code></td></tr>
+          <tr><td>Delete file</td><td><code>rm file.txt</code></td><td><code>del file.txt</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Slide 8: Common Operations - Visualizing -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>4.4 Visualizing Structure</h2>
+      <p>Display a visual tree diagram of directories and files:</p>
+      <div class="two-col">
+        <div class="col-card">
+          <span class="badge badge-mac">macOS/Linux</span>
+          <pre>tree</pre>
+          <small>Install via: <code>brew install tree</code></small>
+        </div>
+        <div class="col-card">
+          <span class="badge badge-win">Windows</span>
+          <pre>tree /F</pre>
+          <small>/F flag is required to show files.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 9: Detailed Examples - Navigation -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5.1 Navigation Examples</h2>
+      <p>Practice directory: <code>mkdir terminal_practice && cd terminal_practice</code></p>
+      <div class="two-col">
+        <div class="col-card">
+          <strong>Identifying Types (macOS/Linux):</strong>
+          <pre>drwxr-xr-x  Directory\n-rw-r--r--  File\nlrwxrwxrwx  Link</pre>
+        </div>
+        <div class="col-card">
+          <strong>Identifying Types (Windows):</strong>
+          <pre>&lt;DIR&gt;  Directory\n5,522   File (Size)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 10: Detailed Examples - Files & Dirs -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5.2-5.3 File & Directory Management</h2>
+      <div class="step-box">
+        <strong>Create & Nested:</strong><br>
+        <span class="badge badge-mac">Linux</span> <code>mkdir -p paper/drafts</code> | <span class="badge badge-win">Win</span> <code>mkdir paper\drafts</code>
+      </div>
+      <div class="step-box">
+        <strong>Copy & Rename:</strong><br>
+        <span class="badge badge-mac">Linux</span> <code>cp -r src src_bk</code>, <code>mv doc docs</code> | <span class="badge badge-win">Win</span> <code>xcopy /E /I</code>, <code>ren doc docs</code>
+      </div>
+      <div class="step-box">
+        <strong>View & Delete:</strong><br>
+        <span class="badge badge-mac">Linux</span> <code>cat notes.txt</code>, <code>rm notes.txt</code> | <span class="badge badge-win">Win</span> <code>type notes.txt</code>, <code>del notes.txt</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 11: Student Evaluation Scenario (1/2) -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>6. Student Evaluation (1/2)</h2>
+      <p><strong>Scenario:</strong> Set up a research workspace <code>climate_research_[name]</code></p>
+      <div class="col-card">
+        <strong>Required Structure:</strong>
+        <ul>
+          <li><code>src_[name]</code>, <code>output_[name]</code>, <code>references_[name]</code>, <code>doc_[name]</code></li>
+          <li>Nested: <code>paper_[name]/drafts_[name]</code></li>
+          <li>File: <code>doc_[name]/todo.txt</code> (with name and tasks)</li>
+          <li>File: <code>references_[name]/sources.txt</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 12: Student Evaluation Scenario (2/2) -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>6. Student Evaluation (2/2)</h2>
+      <div class="step-box">
+        <strong>Refactor:</strong> Rename <code>doc_[name]</code> &rarr; <code>documentation_[name]</code> and <code>sources.txt</code> &rarr; <code>citations.txt</code>.
+      </div>
+      <div class="step-box">
+        <strong>Cleanup:</strong> Delete <code>output_[name]</code> directory.
+      </div>
+      <p><strong>Verification Command:</strong></p>
+      <pre>macOS/Linux: date && tree && cat documentation_[name]/todo.txt
+Windows: echo %date% %time% && tree /F && type documentation_[name]\todo.txt</pre>
+    </div>
+  </div>
+
+  <!-- Slide 13: Evaluation Criteria -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>6.4 Evaluation Criteria</h2>
+      <ul class="checklist">
+        <li>Terminal Launch: Can open the command-line application correctly.</li>
+        <li>Navigation: Can move between nested directories (<code>cd</code>, <code>cd ..</code>).</li>
+        <li>Pathing: Understands custom naming and nested directory creation.</li>
+        <li>File Management: Able to create, rename, and delete files/directories.</li>
+        <li>Verification: Able to generate the required report screenshot.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = 'Year: ' + new Date().getFullYear();
+    const slides = document.querySelectorAll('.slide');
+    let current = 0;
+
+    function autoScaleSlides() {
+      slides.forEach(slide => {
+        const body = slide.querySelector('.slide-body');
+        if (!body) return;
+        slide.style.display = 'flex';
+        body.style.fontSize = '1em';
+        const targetH = body.clientHeight * 0.96;
+        body.style.flex = 'none';
+        body.style.height = 'auto';
+        body.style.overflow = 'visible';
+        let lo = 0.9, hi = 1.5;
+        for (let j = 0; j < 25; j++) {
+          const mid = (lo + hi) / 2;
+          body.style.fontSize = mid + 'em';
+          if (body.scrollHeight <= targetH) lo = mid;
+          else hi = mid;
+        }
+        body.style.fontSize = lo + 'em';
+        body.style.flex = '';
+        body.style.height = '';
+        body.style.overflow = '';
+        slide.style.display = '';
+      });
+    }
+
+    function showSlide(index) {
+      slides.forEach((s, i) => {
+        s.classList.remove('active', 'exit-left', 'exit-right');
+        if (i === index) s.classList.add('active');
+        else if (i < index) s.classList.add('exit-left');
+        else s.classList.add('exit-right');
+      });
+      const isTitle = slides[index] && slides[index].classList.contains('title-slide');
+      document.getElementById('slideCounter').style.display = isTitle ? 'none' : 'block';
+      document.getElementById('progressBar').style.display = isTitle ? 'none' : 'block';
+      document.getElementById('slideCounter').textContent = `${index + 1} / ${slides.length}`;
+      document.getElementById('progressBar').style.width = ((index + 1) / slides.length * 100) + '%';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (current > 0) { current--; showSlide(current); }
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
+        if (current < slides.length - 1) { current++; showSlide(current); }
+      }
+      if (e.key === 'Home') { e.preventDefault(); current = 0; showSlide(current); }
+      if (e.key === 'End') { e.preventDefault(); current = slides.length - 1; showSlide(current); }
+    });
+
+    autoScaleSlides();
+    showSlide(0);
+    window.showSlide = showSlide;
+  </script>
+</body>
+</html>
