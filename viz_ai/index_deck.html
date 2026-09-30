@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Coding for Data Visualization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #dc2626;
+      --primary-dark: #991b1b;
+      --primary-light: #fee2e2;
+      --accent: #e11d48;
+      --accent-light: #ffe4e6;
+      --font-heading: 'Montserrat', system-ui, sans-serif;
+      --font-body: 'Source Sans 3', system-ui, sans-serif;
+      --font-code: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: var(--font-body);
+      font-size: 1.3em;
+      background: #1a1a1a;
+      color: #333;
+      overflow: hidden;
+    }
+    #progressBar {
+      position: fixed; top: 0; left: 0; height: 2px;
+      background: var(--primary); z-index: 100;
+      transition: width 0.3s ease;
+    }
+    #slideCounter {
+      position: fixed; bottom: 20px; left: 20px;
+      font-size: 0.8em; color: #666; z-index: 100;
+    }
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 50px 70px;
+      background: #fff;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      border-top: 4px solid var(--primary);
+    }
+    .slide.active { display: flex; transform: translateX(0); opacity: 1; }
+    .slide.exit-left { display: flex; transform: translateX(-100%); opacity: 0; }
+    .slide.exit-right { display: flex; transform: translateX(100%); opacity: 0; }
+    .title-slide {
+      border-top: none;
+      background: #fff;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .slide-body {
+      flex: 1;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 { font-family: var(--font-heading); color: #000; margin: 0 0 28px 0; }
+    .title-slide h1 { font-size: 3.5em; margin-bottom: 20px; color: var(--primary); }
+    h2 { font-family: var(--font-heading); color: var(--primary); font-size: 1.6em; margin: 0 0 20px 0; }
+    h3 { font-family: var(--font-heading); color: #444; font-size: 1.35em; margin: 20px 0 10px 0; }
+    p, li { line-height: 1.6; margin-bottom: 15px; }
+    
+    /* Components */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .col-card { padding: 14px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e5e7eb; height: 100%; }
+    
+    .term-card { display: flex; gap: 10px; margin-bottom: 10px; align-items: baseline; }
+    .term-name { font-weight: 600; width: 220px; flex-shrink: 0; color: var(--primary-dark); }
+    
+    .step-box { border-left: 3px solid var(--primary); padding: 10px 16px; margin-bottom: 15px; background: var(--primary-light); }
+    
+    .highlight-box {
+      background: #fefce8;
+      border: 1px solid #fef08a;
+      padding: 14px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; border-right: 3px solid rgba(255,255,255,0.3); }
+    th:last-child { border-right: none; }
+    td { padding: 8px 14px; border-bottom: 1px solid #ddd; }
+    
+    pre {
+      font-family: var(--font-code);
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 1.1em;
+      overflow-x: auto;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    code { font-family: var(--font-code); background: #eee; padding: 2px 4px; border-radius: 4px; }
+    
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; line-height: 1.6; }
+    .checklist li::before { content: '☐'; font-size: 1.2em; flex-shrink: 0; }
+    
+    ol.toc { font-size: 1.3em; line-height: 2.2; }
+  </style>
+</head>
+<body>
+  <div id="progressBar"></div>
+  <div id="slideCounter"></div>
+
+  <!-- Title Slide -->
+  <div class="slide title-slide">
+    <div class="slide-body" style="text-align: center;">
+      <h1>Vibe Coding for Data Visualization</h1>
+      <p>Author: Innovation Analytics Lab</p>
+      <p>Affiliation: Global Master of Business Administration</p>
+      <p>University: Tunghai University</p>
+      <p id="year"></p>
+    </div>
+  </div>
+
+  <!-- TOC Slide -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>Table of Contents</h2>
+      <ol class="toc">
+        <li>Workshop Objectives</li>
+        <li>Chart Anatomy and Type Selection</li>
+        <li>Stack & Setup</li>
+        <li>Workshop Agenda (3 Hours)</li>
+        <li>Hands-On Labs (Vibe Coding with homepage_ux.csv)</li>
+        <li>Prompting Tips for Data Viz AI</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Slide 1: Objectives -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>1. Workshop Objectives</h2>
+      <ul>
+        <li>Understand the vibe coding workflow and how it transforms traditional data visualization.</li>
+        <li>Guide AI agents to style chart anatomy (axes, labels, ticks, legends) using qualitative feedback.</li>
+        <li>Select and orchestrate the right chart types (line, bar, pie, box, scatter plots) using natural language directives.</li>
+        <li>Prompt the Google Antigravity Agent using Gemma-4-31B-QAT and NVIDIA Nemotron-3 to generate matplotlib, seaborn, and plotly code.</li>
+        <li>Master the iterative feedback loop to debug, refine, and polish complex interactive dashboards.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Slide 2: Chart Anatomy -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>2. Chart Anatomy & Type Selection</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Core Chart Anatomy</h3>
+          <div class="term-card"><div class="term-name">Axes</div><div>The horizontal and vertical reference lines (x/y axes).</div></div>
+          <div class="term-card"><div class="term-name">Labels</div><div>Explanatory text identifying axes and data categories.</div></div>
+          <div class="term-card"><div class="term-name">Ticks</div><div>Grid markers and numeric values showing scaling.</div></div>
+          <div class="term-card"><div class="term-name">Legends</div><div>Key explaining visual markers, colors, or line styles.</div></div>
+        </div>
+        <div class="col-card">
+          <h3>Chart Type Selection</h3>
+          <ul>
+            <li><strong>Line Chart</strong>: Continuous data changes over time / trends.</li>
+            <li><strong>Bar Chart</strong>: Comparing sizes of discrete categorical items.</li>
+            <li><strong>Pie Chart</strong>: Part-to-whole proportions (small groups).</li>
+            <li><strong>Box Plot</strong>: Statistical distribution and outliers.</li>
+            <li><strong>Scatter Plot</strong>: Relationships between continuous variables.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Stack & Setup -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>3. Stack & Setup</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Environment & Tools</h3>
+          <ul>
+            <li>IDE: Google Antigravity IDE (VS Code based)</li>
+            <li>Language: Python 3.9+</li>
+            <li>Core Packages: matplotlib, seaborn, plotly, pandas</li>
+            <li>AI Assistance: Google Antigravity Agent</li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <h3>AI Models</h3>
+          <div class="step-box">
+            <strong>Gemma-4-31B-QAT</strong><br>
+            Optimized for rapid drafting and standard plotting library code.
+          </div>
+          <div class="step-box">
+            <strong>NVIDIA Nemotron-3</strong><br>
+            Superb for complex logical reasoning, custom layouts, and debugging.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Agenda -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>4. Workshop Agenda (3 Hours)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Module</th>
+            <th>Key Topics</th>
+            <th>Deliverables</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>00:00-00:30</td>
+            <td>1. Intro & Setup</td>
+            <td>Vibe coding concept, anatomy, env config</td>
+            <td>Environment verified</td>
+          </tr>
+          <tr>
+            <td>00:30-01:10</td>
+            <td>2. Iteration Loop</td>
+            <td>Draft zero, aesthetic iteration, fine tuning</td>
+            <td>Labs 1 & 2</td>
+          </tr>
+          <tr>
+            <td>01:10-01:20</td>
+            <td>3. Break</td>
+            <td>-</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td>01:20-02:10</td>
+            <td>4. Dashboards</td>
+            <td>Plotly, interactive layout, model comparison</td>
+            <td>Lab 3</td>
+          </tr>
+          <tr>
+            <td>02:10-02:45</td>
+            <td>5. Challenges</td>
+            <td>Debugging, style mimicry</td>
+            <td>Lab 4</td>
+          </tr>
+          <tr>
+            <td>02:45-03:00</td>
+            <td>6. Wrap-Up</td>
+            <td>Showcase, best practices, Q&A</td>
+            <td>Interactive feedback</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Slide 5: Lab 1 -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5. Lab 1: Marketing Channel Distribution</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Goal</h3>
+          <p>Visualize how prospective international students first hear about the GMBA program.</p>
+        </div>
+        <div class="col-card">
+          <h3>Visual Principle</h3>
+          <p><strong>Sorting & Label Clutter:</strong> Always sort categorical charts by frequency (descending). Rotate labels by 45° to prevent overlaps.</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Vibe Coding Tip:</strong> Tell the agent to clean white spaces, aggregate using value counts, and apply a specific rotation factor to the x-tick labels.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Lab 2 -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5. Lab 2: Importance vs Sufficiency Gap</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Goal</h3>
+          <p>Compare perceived importance of homepage info (Q3) vs current sufficiency (Q4).</p>
+        </div>
+        <div class="col-card">
+          <h3>Visual Principle</h3>
+          <p><strong>Grouped Charts:</strong> Side-by-side bars highlight discrepancies. Map Likert scales (text) to numeric integers (1-5) before averaging.</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Vibe Coding Tip:</strong> Instruct the agent to map textual Likert scales to numeric integers using pandas mapping.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 7: Lab 3 -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5. Lab 3: Usability Barriers Heatmap</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Goal</h3>
+          <p>Chart specific navigation and usability barriers (Q6) students face.</p>
+        </div>
+        <div class="col-card">
+          <h3>Visual Principle</h3>
+          <p><strong>Matrix Data:</strong> Melt wide tables into long format. Use sequential color gradients (heatmaps) to draw attention to pain points.</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Vibe Coding Tip:</strong> Prompt the agent to use pandas <code>melt</code> function to reshape the columns before plotting.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 8: Lab 4 -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>5. Lab 4: Satisfaction Dashboard</h2>
+      <div class="two-col">
+        <div class="col-card">
+          <h3>Goal</h3>
+          <p>Assemble a unified HTML dashboard: Overall satisfaction (Q10) + Preferred formats (Q9).</p>
+        </div>
+        <div class="col-card">
+          <h3>Visual Principle</h3>
+          <p><strong>Hierarchy:</strong> KPIs top-left (F-pattern). Group details to right/bottom. Ensure color consistency.</p>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <strong>Vibe Coding Tip:</strong> Direct the agent to generate a combined Plotly grid layout or a simple HTML/CSS template.
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 9: Prompting Tips -->
+  <div class="slide">
+    <div class="slide-body">
+      <h2>6. Prompting Tips for Data Viz AI</h2>
+      <div class="step-box">
+        <strong>Structure:</strong> Intent &rarr; Context &rarr; Aesthetic Constraints
+      </div>
+      <pre>
+"Act as a clean, modern dashboard designer. Using the loaded sales dataframe, generate a matplotlib scatter plot showing marketing spend versus revenue.
+- Group data points by product category using distinct, soft-toned colors.
+- Format the ticks to show dollar signs.
+- Keep the style minimal with a light gray grid and no outer borders."</pre>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const slides = document.querySelectorAll('.slide');
+    let current = 0;
+
+    function autoScaleSlides() {
+      slides.forEach(slide => {
+        const body = slide.querySelector('.slide-body');
+        if (!body) return;
+        slide.style.display = 'flex';
+        body.style.fontSize = '1em';
+        const targetH = body.clientHeight * 0.96;
+        body.style.flex = 'none';
+        body.style.height = 'auto';
+        body.style.overflow = 'visible';
+        let lo = 0.9, hi = 1.5;
+        for (let j = 0; j < 25; j++) {
+          const mid = (lo + hi) / 2;
+          body.style.fontSize = mid + 'em';
+          if (body.scrollHeight <= targetH) lo = mid;
+          else hi = mid;
+        }
+        body.style.fontSize = lo + 'em';
+        body.style.flex = '';
+        body.style.height = '';
+        body.style.overflow = '';
+        slide.style.display = '';
+      });
+    }
+
+    function showSlide(index) {
+      slides.forEach((s, i) => {
+        s.classList.remove('active', 'exit-left', 'exit-right');
+        if (i === index) s.classList.add('active');
+        else if (i < index) s.classList.add('exit-left');
+        else s.classList.add('exit-right');
+      });
+      const isTitle = slides[index] && slides[index].classList.contains('title-slide');
+      document.getElementById('slideCounter').style.display = isTitle ? 'none' : 'block';
+      document.getElementById('progressBar').style.display = isTitle ? 'none' : 'block';
+      document.getElementById('slideCounter').textContent = `${index + 1} / ${slides.length}`;
+      document.getElementById('progressBar').style.width = ((index + 1) / slides.length * 100) + '%';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (current > 0) { current--; showSlide(current); }
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
+        if (current < slides.length - 1) { current++; showSlide(current); }
+      }
+      if (e.key === 'Home') { e.preventDefault(); current = 0; showSlide(current); }
+      if (e.key === 'End') { e.preventDefault(); current = slides.length - 1; showSlide(current); }
+    });
+
+    autoScaleSlides();
+    showSlide(0);
+    window.showSlide = showSlide;
+  </script>
+</body>
+</html>
